@@ -1,0 +1,99 @@
+------In commandHandler.lua add to the elseif command chain------
+
+    elseif cmd[1] == "storage" then
+    
+        local storageCell = "mark's vampire test cell"
+        local temploaded = false
+        local storageId = ""
+        local playerName = Players[pid].accountName
+        
+        if WorldInstance.data.storageInfo == nil then
+            WorldInstance.data.storageInfo = {}
+        end
+        if WorldInstance.data.storageInfo[playerName] == nil then
+            WorldInstance.data.storageInfo[playerName] = {storageId = "",hasAccess = {}}
+        end
+        
+        if cmd[2] ~= nil then
+            if cmd[2] == "add" then
+                WorldInstance.data.storageInfo[playerName].hasAccess[cmd[3]] = true
+                WorldInstance:Save()
+                Players[pid]:Message("Given " .. cmd[3] .. " access\n")
+                return false
+            elseif cmd[2] == "remove" then
+                WorldInstance.data.storageInfo[playerName].hasAccess[cmd[3]] = nil
+                WorldInstance:Save()
+                Players[pid]:Message("Revoked " .. cmd[3] .. "'s access\n")
+                return false
+            elseif WorldInstance.data.storageInfo[cmd[2]] ~= nil and WorldInstance.data.storageInfo[cmd[2]].storageId ~= "" then
+                if WorldInstance.data.storageInfo[cmd[2]].hasAccess[playerName] or admin then
+                    playerName = cmd[2]
+                else
+                    Players[pid]:Message("You don't have access to this storage\n")
+                    return false
+                end
+            else
+                Players[pid]:Message("The player you entered has no storage\n")
+                return false
+            end
+        end
+        
+        if Players[pid].loadedStorage[playerName] == nil then
+            if LoadedCells[storageCell] == nil then
+                logicHandler.LoadCell(storageCell)
+                temploaded = true
+            end
+            
+            if WorldInstance.data.storageInfo[playerName].storageId == "" then
+                local location = {posX = 0,posY = 0,posZ = 0,rotX = 0,rotY = 0,rotZ = 0}
+                storageId = logicHandler.CreateObjectAtLocation(storageCell,location,"storagerat","spawn")
+                WorldInstance.data.storageInfo[playerName].storageId = storageId
+                WorldInstance:Save()
+            else
+                storageId = WorldInstance.data.storageInfo[playerName].storageId
+            end
+            
+            local recordData = {storagerat = {baseId = "dead rat",name = playerName .. "'s Storage"}}
+            RecordStores["creature"]:LoadRecords(pid,recordData,{"storagerat"})
+            
+            local objData = LoadedCells[storageCell].data.objectData
+            LoadedCells[storageCell]:LoadObjectsSpawned(pid,objData,{storageId})
+            LoadedCells[storageCell]:LoadContainers(pid,objData,{storageId})
+            Players[pid].loadedStorage[playerName] = true
+            
+            if temploaded then
+                logicHandler.UnloadCell(storageCell)
+                temploaded = false
+            end
+        end
+        storageId = WorldInstance.data.storageInfo[playerName].storageId
+        logicHandler.ActivateObjectForPlayer(pid,storageCell,storageId)
+
+
+
+
+-------In mp-stuff\data\recordstore\creature.json this needs to be added to the permanent records-------
+
+  "permanentRecords":{
+	"storagerat":{
+      "baseId":"dead rat",
+      "name":"storage"
+    }
+  }
+
+
+
+
+-------In eventHandler.lua in the OnContainer function this code needs to be either commented out (--[[ and ]]--) or deleted-------
+
+        --[[if not isCellLoaded and logicHandler.DoesPacketOriginRequireLoadedCell(packetOrigin) then
+            tes3mp.LogMessage(enumerations.log.WARN, "Invalid Container: " .. logicHandler.GetChatName(pid) ..
+                " used impossible packetOrigin for unloaded " .. cellDescription)
+            return]]--
+
+
+
+
+-------In player\base.lua this needs to be added to the top of the FinishLogin function-------
+
+    self.loadedStorage = {}
