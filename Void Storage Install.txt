@@ -38,6 +38,9 @@
             end
         end
         
+	if Players[pid].loadedStorage == nil then
+	    Players[pid].loadedStorage = {}
+	end
         if Players[pid].loadedStorage[playerName] == nil then
             if LoadedCells[storageCell] == nil then
                 logicHandler.LoadCell(storageCell)
@@ -53,6 +56,7 @@
                 storageId = WorldInstance.data.storageInfo[playerName].storageId
             end
             
+	    LoadedCells[storageCell]:LoadGeneratedRecords(pid)
             local recordData = {storagerat = {baseId = "dead rat",name = playerName .. "'s Storage"}}
             RecordStores["creature"]:LoadRecords(pid,recordData,{"storagerat"})
             
@@ -90,10 +94,3 @@
             tes3mp.LogMessage(enumerations.log.WARN, "Invalid Container: " .. logicHandler.GetChatName(pid) ..
                 " used impossible packetOrigin for unloaded " .. cellDescription)
             return]]--
-
-
-
-
--------In player\base.lua this needs to be added to the top of the FinishLogin function-------
-
-    self.loadedStorage = {}
