@@ -1,2 +1,2 @@
-# Tes3mp-Void-Storage
-Allows you to access a storage with a simple command
+# Tes3mp-Scripts
+My collection of scripts for Tes3mp
